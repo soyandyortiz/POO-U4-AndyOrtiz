@@ -1,149 +1,104 @@
-# Sistema de Contenido Audiovisual — POO Unidad 2
+# Sistema de Contenido Audiovisual — Programación Limpia
 
-**Universidad Politécnica Salesiana · Ingeniería en Software · Programación Orientada a Objetos**
-**Unidad 2: Relación entre Clases** · Autor: **Andy Javier Ortiz Valdiviezo** · Docente: Gustavo Navas Ruilova
+**Universidad Politécnica Salesiana – Ingeniería en Software**
+Programación Orientada a Objetos – Unidad 4: Programación Limpia
+Estudiante: Andy Javier Ortiz Valdiviezo · Docente: Gustavo Navas Ruilova
 
----
+## Descripción
 
-## 1. Descripción del proyecto
+Aplicación de consola en Java que administra un catálogo de contenido audiovisual: películas, series de TV, documentales, videos musicales y podcasts, junto con sus actores, temporadas e investigadores.
 
-Aplicación de consola en Java que administra un catálogo de contenido audiovisual (películas, series de TV, documentales, videos musicales y podcasts) junto con las personas relacionadas con ese contenido: actores, temporadas de las series e investigadores que asesoran.
+Este proyecto parte del sistema de la Unidad 2 ([POO-U2-AndyOrtiz](https://github.com/soyandyortiz/POO-U2-AndyOrtiz)). En esta unidad se le agregó lectura y escritura de archivos **CSV**. Además, el código se refactorizó con principios de **código limpio** y **SOLID**, se reorganizó con el patrón **MVC** y se cubrió con **pruebas unitarias JUnit 5**.
 
-El proyecto parte del **Código Ejemplo 30** del docente ([poo_unidad1](https://github.com/CS-Programacion-Orientada-Objetos/poo_unidad1)), que solo tenía la jerarquía `ContenidoAudiovisual → Pelicula / SerieDeTV / Documental`. Se amplió para aplicar en la práctica los temas de la unidad:
+## Cambios realizados en esta unidad
 
-| Tema de la unidad | Dónde se aplica |
+### Etapa 1 · Manejo de archivos (CSV)
+- Los datos se leen y se guardan en la carpeta `datos/`, en seis archivos:
+
+  | Archivo | Contenido |
+  |---|---|
+  | `contenidos.csv` | Un registro por contenido, con su tipo, datos comunes, calificaciones y columnas propias |
+  | `actores.csv`, `investigadores.csv` | Personas registradas |
+  | `temporadas.csv` | Temporadas de cada serie (composición) |
+  | `reparto.csv`, `asesores.csv` | Relaciones contenido–actor y contenido–investigador |
+
+- Al iniciar, el programa carga los CSV. Desde el menú se puede guardar (opción 16) o recargar (opción 17), y al salir pregunta si se quieren guardar los cambios.
+- Para guardar se escribe primero un archivo `.tmp` y luego se reemplaza el original, así un error no deja el CSV a medias.
+- Los campos con comas o comillas se escriben entre comillas (formato estándar RFC 4180).
+- Si una línea tiene un error, se lanza `FormatoCsvException` indicando **archivo, número de línea y columna**. Ejemplo: `contenidos.csv, línea 3: 'abc' no es un número válido en la columna 'duracion'`.
+
+### Etapa 2 · Refactorización y código limpio
+- Se eliminó el contador `static` de IDs: ahora `Catalogo` asigna el siguiente ID, y así los IDs se conservan al cargar desde el archivo.
+- Se eliminó código duplicado:
+  - `ColeccionUnica<T>` reemplaza la lógica de "agregar sin repetir", que estaba copiada en cuatro clases.
+  - `Validacion` reúne las validaciones que se repetían.
+  - `TextoDetalle` arma las secciones de texto de los detalles.
+- Se separaron los métodos largos: el controlador tiene un método pequeño por opción del menú, y `RepositorioCsv` tiene un método por archivo.
+- Se renombró lo que no era claro y se quitaron los comentarios redundantes; los que quedan explican el *porqué*.
+- El modelo ya no imprime en consola (`mostrarDetalles()` se reemplazó por `obtenerDetalles()`).
+
+### Etapa 3 · Principios SOLID
+
+| Principio | Aplicación |
 |---|---|
-| Herencia y polimorfismo (Clase 6) | 5 subclases de `ContenidoAudiovisual`; `mostrarDetalles()` / `obtenerDetalles()` sobrescritos |
-| Paquetes e interfaces (Clase 7) | Paquetes `modelo`, `vista`, `controlador`, `app`; interfaz `Calificable` |
-| Asociación, agregación y composición (Clase 8) | `Documental → Investigador`, `Pelicula ◇ Actor`, `SerieDeTV ◆ Temporada` |
-| Diagrama de clases (Clase 9) | `docs/diagrama-clases.png` (también se muestra abajo) |
-| Patrón MVC (Clase 10) | `modelo` + `vista.VistaConsola` + `controlador.CatalogoController` |
+| SRP | `Catalogo` gestiona los datos, `RepositorioCsv` los archivos, `VistaConsola` la entrada/salida y `CatalogoController` coordina. |
+| OCP | Cada tipo de contenido tiene su `MapeadorContenido`: para guardar un tipo nuevo se agrega un mapeador, sin modificar `RepositorioCsv`. El menú se arma con un mapa de opciones. |
+| LSP | Las 5 subclases respetan el contrato de `ContenidoAudiovisual` (ninguna lanza `UnsupportedOperationException`). `PolimorfismoLiskovTest` lo verifica. |
+| ISP | En lugar de una interfaz grande hay tres pequeñas: `Calificable`, `ConReparto` (Pelicula, VideoMusical) y `ConInvestigadores` (Documental, Podcast). |
+| DIP | `CatalogoController` depende de las interfaces `Vista` y `RepositorioCatalogo`, que se inyectan por constructor en `Main`. En las pruebas se reemplazan por una vista simulada y un repositorio en memoria. |
 
-**¿Qué problema resuelve?** Permite registrar, relacionar, calificar, buscar, editar y eliminar contenido audiovisual de forma ordenada, mostrando cómo se comportan los objetos según el tipo de relación (por ejemplo, al eliminar una serie desaparecen sus temporadas, pero al eliminar una película sus actores siguen registrados).
+### Etapa 4 · Patrón MVC
 
-## 2. Objetivos
+- **Modelo**: paquete `modelo`, con las clases de negocio y el `Catalogo`.
+- **Vista**: paquete `vista`, con la interfaz `Vista` y `VistaConsola`, que tiene un menú de 17 opciones.
+- **Controlador**: paquete `controlador`, con `CatalogoController`.
+- **Persistencia**: paquete `persistencia`, para los archivos CSV.
 
-- Ampliar un proyecto Java existente aplicando herencia, asociación, agregación y composición.
-- Documentar el diseño con un diagrama de clases UML.
-- Construir un sistema funcional que permita crear y manipular objetos de todas las clases.
-- Gestionar el proyecto con Git y GitHub mediante commits por etapa.
+### Etapa 5 · Pruebas unitarias (JUnit 5)
 
-## 3. Clases y funcionalidades nuevas
+- **97 pruebas** en la carpeta `test/`, en 12 clases de prueba. Usan `@Test`, `@ParameterizedTest`, `@TempDir`, `assertThrows` y `assertInstanceOf`.
+- Cubren los casos normales, los límites y los excepcionales:
+  - Límites: 0 y 6 estrellas, 999 999 y 1 000 000 reproducciones.
+  - Archivos: CSV dañados, IDs inexistentes y temporadas no consecutivas.
+- Cobertura medida con JaCoCo / EclEmma: **98 % de líneas** del código (excepto `Main`).
 
-| Clase | Tipo | Relación | Justificación |
-|---|---|---|---|
-| `Actor` | Nueva | **Agregación** con `Pelicula` (0..*) y `VideoMusical` (0..*) | El actor existe por sí solo y puede estar en varios contenidos; si se elimina la película, el actor sigue existiendo. |
-| `Temporada` | Nueva | **Composición** con `SerieDeTV` (0..*) | Solo la serie crea sus temporadas (constructor de paquete, numeración automática); mueren con la serie. |
-| `Investigador` | Nueva | **Asociación** con `Documental` y `Podcast` (0..*) | El contenido conoce a sus asesores/invitados, sin relación todo-parte. |
-| `VideoMusical` | Nueva subclase | Hereda de `ContenidoAudiovisual`; agrega `Actor` | Artista, álbum, año, reproducciones y regla `esViral()` (≥ 1 000 000). |
-| `Podcast` | Nueva subclase | Hereda de `ContenidoAudiovisual`; se asocia con `Investigador` | Anfitrión, plataforma, número de episodio e invitados; `esMonologo()`. |
-| `Calificable` | Interfaz | La implementa `ContenidoAudiovisual` | Calificación de 1 a 5 estrellas con promedio para todo el contenido. |
-| `CatalogoController` | Controlador MVC | Usa todas las clases del modelo | Lógica de negocio y validaciones (sin imprimir nada). |
-| `VistaConsola` | Vista MVC | Usa el controlador | Menú de 15 opciones con lectura segura de datos. |
-| `PruebasSistema` | Pruebas | — | 18 pruebas automáticas que verifican herencia, relaciones y validaciones. |
-
-## 4. Diagrama de clases
-
-![Diagrama de clases](docs/diagrama-clases.png)
-
-> Fuente editable en [`docs/diagrama-clases.mmd`](docs/diagrama-clases.mmd) (Mermaid). La primera versión (antes de las nuevas subclases) está en `docs/diagrama-clases-v1.png`.
-
-## 5. Estructura de carpetas
+## Estructura del proyecto
 
 ```
 ├── src/
-│   ├── main/java/
-│   │   ├── app/            → PruebaAudioVisual (método main)
-│   │   ├── controlador/    → CatalogoController
-│   │   ├── modelo/         → ContenidoAudiovisual, Pelicula, SerieDeTV, Documental,
-│   │   │                     VideoMusical, Podcast, Actor, Temporada, Investigador, Calificable
-│   │   └── vista/          → VistaConsola
-│   └── test/java/
-│       └── pruebas/        → PruebasSistema
-├── docs/                   → diagramas de clases (PNG + fuente Mermaid)
-├── .classpath / .project   → configuración del proyecto Eclipse
-└── README.md
+│   ├── app/            Main (arma las dependencias)
+│   ├── controlador/    CatalogoController
+│   ├── modelo/         ContenidoAudiovisual, Pelicula, SerieDeTV, Documental, VideoMusical, Podcast,
+│   │                   Actor, Temporada, Investigador, Catalogo, Calificable, ConReparto,
+│   │                   ConInvestigadores, ColeccionUnica, Validacion
+│   │   └── excepciones/ ElementoNoEncontradoException
+│   ├── persistencia/   RepositorioCatalogo, RepositorioCsv, MapeadorContenido, Mapeadores,
+│   │                   ArchivoCsv, FilaCsv, Csv, PersistenciaException, FormatoCsvException
+│   └── vista/          Vista, VistaConsola
+├── test/               pruebas JUnit 5 (mismos paquetes que src/)
+├── datos/              archivos CSV de ejemplo
+└── docs/               diagrama de clases (PNG y fuente Mermaid)
 ```
 
-## 6. Instalación y ejecución
+## Diagrama de clases
 
-**Requisitos:** JDK 17 o superior (probado con JDK 25) y Eclipse IDE for Java Developers. Git para clonar.
+![Diagrama de clases](docs/diagrama-clases.png)
 
-### Opción A — Eclipse (recomendada)
+## Cómo clonar y ejecutar
+
+**Requisitos:** JDK 17 o superior y Eclipse IDE for Java Developers, que ya incluye JUnit 5.
 
 1. Clonar el repositorio:
-   ```bash
-   git clone https://github.com/soyandyortiz/POO-U2-AndyOrtiz.git
    ```
-2. En Eclipse: **File → Import → General → Existing Projects into Workspace** → *Select root directory* → elegir la carpeta clonada → **Finish**.
-3. Ejecutar el sistema: clic derecho en `src/main/java/app/PruebaAudioVisual.java` → **Run As → Java Application**.
-4. Ejecutar las pruebas: clic derecho en `src/test/java/pruebas/PruebasSistema.java` → **Run As → Java Application**.
+   git clone https://github.com/soyandyortiz/POO-U4-AndyOrtiz.git
+   ```
+   También se puede descargar con *Code → Download ZIP*.
+2. En Eclipse: *File → Import → General → Existing Projects into Workspace* y elegir la carpeta del proyecto.
+3. Ejecutar `src/app/Main.java` con *Run As → Java Application*. El programa lee los CSV de la carpeta `datos/`.
 
-### Opción B — Consola (CMD / terminal)
+## Cómo ejecutar las pruebas
 
-```bash
-git clone https://github.com/soyandyortiz/POO-U2-AndyOrtiz.git
-cd POO-U2-AndyOrtiz
-javac -encoding UTF-8 -d bin src/main/java/modelo/*.java src/main/java/controlador/*.java src/main/java/vista/*.java src/main/java/app/*.java src/test/java/pruebas/*.java
-java -cp bin app.PruebaAudioVisual
-java -cp bin pruebas.PruebasSistema
-```
+- **Todas las pruebas:** clic derecho en la carpeta `test` → *Run As → JUnit Test*.
+- **Cobertura:** clic derecho en `test` → *Coverage As → JUnit Test*.
 
-## 7. Ejemplo de uso
-
-Al iniciar se cargan datos de ejemplo (Avatar, Game of Thrones, Cosmos, un video musical y un podcast) y se muestra el menú:
-
-```
-=========== SISTEMA DE CONTENIDO AUDIOVISUAL ===========
- 1. Listar catálogo            9. Calificar contenido
- 2. Ver detalle por ID        10. Registrar reproducciones (video)
- 3. Registrar contenido       11. Editar título/duración/género
- 4. Registrar actor           12. Buscar por título
- 5. Registrar investigador    13. Eliminar contenido
- 6. Asignar actor             14. Ver actores e investigadores
- 7. Asignar investigador      15. Resumen del catálogo
- 8. Agregar temporada a serie  0. Salir
-=========================================================
-Seleccione una opción: 1
-[0] Película      | Avatar (125 min) | 4.5/5
-[1] Serie de TV   | Game of Thrones (60 min) | 5.0/5
-[2] Documental    | Cosmos (45 min) | 0.0/5
-[3] Video musical | Vivir mi vida (5 min) | 0.0/5
-[4] Podcast       | El universo en 30 minutos (30 min) | 4.0/5
-```
-
-Ejemplo de detalle (opción 2, ID 1) donde se ve la composición serie–temporadas:
-
-```
-Detalles (Serie de TV):
-ID: 1
-Título: Game of Thrones
-Duración en minutos: 60
-Género: Fantasía
-Calificación: 5.0/5 (1 votos)
-Temporadas: 2 | Episodios totales: 20
-  - Temporada 1 (2011) - 10 episodios
-  - Temporada 2 (2012) - 10 episodios
-```
-
-## 8. Mejoras adicionales implementadas
-
-- **Corrección de un error del código base:** `SerieDeTV` y `Documental` imprimían "Detalles de la película". Se resolvió con un *método plantilla* (`obtenerDetalles()` en la superclase + `detallesEspecificos()` en cada subclase), lo que además elimina el código repetido.
-- **Encapsulamiento de las relaciones:** las listas se exponen con `Collections.unmodifiableList`, se evitan duplicados y `Temporada` no puede crearse fuera del paquete `modelo`.
-- **Validaciones** con `IllegalArgumentException` (duración > 0, estrellas 1–5, IDs existentes, tipo de contenido correcto) y lectura segura de datos en la vista (no se cae si el usuario escribe letras).
-- **Interfaz `Calificable`** y **resumen estadístico** del catálogo (conteo por tipo, duración total, mejor calificado).
-- **18 pruebas automáticas** en `src/test/java` sin dependencias externas.
-
-## 9. Historial de trabajo (commits)
-
-| Commit | Etapa |
-|---|---|
-| Unidad 1 - v1.0 … v1.3 | Código base del docente |
-| Etapa 1 | Reorganización a `src/main/java` y corrección de `mostrarDetalles` |
-| Etapa 2 y 3 | `Actor`, `Temporada`, `Investigador` + relaciones + diagrama v1 |
-| Etapa 4 | Subclases `VideoMusical` y `Podcast`, interfaz `Calificable`, diagrama actualizado |
-| Etapa 5 | Patrón MVC, menú funcional y pruebas automáticas |
-| Etapa 6 | Este README |
-
----
-Universidad Politécnica Salesiana · 2026
+Si Eclipse marca que falta JUnit: clic derecho en el proyecto → *Build Path → Add Libraries → JUnit → JUnit 5*.

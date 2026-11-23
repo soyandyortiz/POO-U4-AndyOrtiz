@@ -1,92 +1,136 @@
 classDiagram
     direction TB
-    class Calificable {
-        <<interface>>
-        +MIN_ESTRELLAS : int$
-        +MAX_ESTRELLAS : int$
-        +calificar(estrellas : int) void
-        +getCalificacionPromedio() double
-        +getNumeroCalificaciones() int
+    namespace modelo {
+        class Calificable {
+            <<interface>>
+            +calificar(estrellas : int) void
+            +getCalificacionPromedio() double
+        }
+        class ConReparto {
+            <<interface>>
+            +agregarActor(a : Actor) boolean
+            +getActores() List~Actor~
+        }
+        class ConInvestigadores {
+            <<interface>>
+            +agregarInvestigador(i : Investigador) boolean
+            +getInvestigadores() List~Investigador~
+        }
+        class ContenidoAudiovisual {
+            <<abstract>>
+            -id : int
+            -titulo : String
+            -duracionEnMinutos : int
+            -genero : String
+            +getTipo()* String
+            #detallesEspecificos()* String
+            +obtenerDetalles() String
+            +restaurarCalificaciones(suma, cantidad) void
+        }
+        class Pelicula {
+            -estudio : String
+            -reparto : ColeccionUnica~Actor~
+        }
+        class SerieDeTV {
+            -temporadas : List~Temporada~
+            +agregarTemporada(anio, episodios) Temporada
+            +getTotalEpisodios() int
+        }
+        class Documental {
+            -tema : String
+            -asesores : ColeccionUnica~Investigador~
+        }
+        class VideoMusical {
+            -artista : String
+            -reproducciones : long
+            +esViral() boolean
+        }
+        class Podcast {
+            -anfitrion : String
+            -plataforma : String
+            +esMonologo() boolean
+        }
+        class Temporada {
+            -numero : int
+            -anioEstreno : int
+            -numeroEpisodios : int
+        }
+        class Actor {
+            -id : int
+            -nombre : String
+        }
+        class Investigador {
+            -id : int
+            -nombre : String
+        }
+        class ColeccionUnica~T~ {
+            +agregar(e : T) boolean
+            +comoLista() List~T~
+        }
+        class Catalogo {
+            +agregarContenido(c) void
+            +buscarContenido(id) ContenidoAudiovisual
+            +buscarContenidoComo(id, tipo, desc) T
+            +eliminarContenido(id) ContenidoAudiovisual
+            +siguienteIdContenido() int
+        }
+        class Validacion {
+            +textoObligatorio(v, campo)$ String
+            +positivo(v, campo)$ int
+        }
     }
-    class ContenidoAudiovisual {
-        <<abstract>>
-        -contar : int$
-        -titulo : String
-        -duracionEnMinutos : int
-        -genero : String
-        -id : int
-        -sumaEstrellas : int
-        -numeroCalificaciones : int
-        +ContenidoAudiovisual(titulo, duracionEnMinutos, genero)
-        +getTitulo() String
-        +getDuracionEnMinutos() int
-        +getGenero() String
-        +getId() int
-        +getTipo()* String
-        #detallesEspecificos()* String
-        +obtenerDetalles() String
-        +mostrarDetalles() void
+    namespace persistencia {
+        class RepositorioCatalogo {
+            <<interface>>
+            +existenDatos() boolean
+            +cargar() Catalogo
+            +guardar(c : Catalogo) void
+        }
+        class RepositorioCsv {
+            -carpeta : Path
+            -mapeadoresPorTipo : Map
+        }
+        class MapeadorContenido~T~ {
+            <<interface>>
+            +getTipo() String
+            +columnasPropias(c : T) List~String~
+            +crear(datos, fila, columna) T
+        }
+        class ArchivoCsv {
+            +leer(ruta)$ List~FilaCsv~
+            +escribir(ruta, encabezado, filas)$ void
+        }
+        class FilaCsv {
+            +texto(col, nombre) String
+            +entero(col, nombre) int
+        }
+        class Csv {
+            +separarFila(linea)$ List~String~
+            +unirFila(campos)$ String
+        }
+        class PersistenciaException
+        class FormatoCsvException {
+            -archivo : String
+            -linea : int
+        }
     }
-    class Pelicula {
-        -estudio : String
-        -actores : List~Actor~
-        +agregarActor(actor : Actor) boolean
-        +quitarActor(actor : Actor) boolean
-        +getActores() List~Actor~
+    namespace vista {
+        class Vista {
+            <<interface>>
+            +elegirOpcion(titulo, opciones) int
+            +pedirTexto(etiqueta) String
+            +pedirEntero(etiqueta, min, max) int
+            +mostrarError(msg) void
+        }
+        class VistaConsola
     }
-    class SerieDeTV {
-        -temporadas : List~Temporada~
-        +agregarTemporada(anio : int, episodios : int) Temporada
-        +eliminarUltimaTemporada() boolean
-        +getNumeroTemporadas() int
-        +getTotalEpisodios() int
-    }
-    class Documental {
-        -tema : String
-        -investigadores : List~Investigador~
-        +agregarInvestigador(i : Investigador) boolean
-        +quitarInvestigador(i : Investigador) boolean
-        +getInvestigadores() List~Investigador~
-    }
-    class VideoMusical {
-        +UMBRAL_VIRAL : long$
-        -artista : String
-        -album : String
-        -anioLanzamiento : int
-        -reproducciones : long
-        -participantes : List~Actor~
-        +registrarReproducciones(cantidad : long) void
-        +esViral() boolean
-        +agregarParticipante(actor : Actor) boolean
-        +quitarParticipante(actor : Actor) boolean
-    }
-    class Podcast {
-        -anfitrion : String
-        -plataforma : String
-        -numeroEpisodio : int
-        -invitados : List~Investigador~
-        +agregarInvitado(i : Investigador) boolean
-        +quitarInvitado(i : Investigador) boolean
-        +esMonologo() boolean
-    }
-    class Actor {
-        -nombre : String
-        -nacionalidad : String
-        -anioDebut : int
-        +toString() String
-    }
-    class Temporada {
-        -numero : int
-        -anioEstreno : int
-        -numeroEpisodios : int
-        ~Temporada(numero, anioEstreno, numeroEpisodios)
-        +toString() String
-    }
-    class Investigador {
-        -nombre : String
-        -especialidad : String
-        -institucion : String
-        +toString() String
+    namespace controlador {
+        class CatalogoController {
+            -vista : Vista
+            -repositorio : RepositorioCatalogo
+            -catalogo : Catalogo
+            +iniciar() void
+        }
     }
     Calificable <|.. ContenidoAudiovisual
     ContenidoAudiovisual <|-- Pelicula
@@ -94,8 +138,23 @@ classDiagram
     ContenidoAudiovisual <|-- Documental
     ContenidoAudiovisual <|-- VideoMusical
     ContenidoAudiovisual <|-- Podcast
-    Pelicula "1" o-- "0..*" Actor : agregación (reparto)
+    ConReparto <|.. Pelicula
+    ConReparto <|.. VideoMusical
+    ConInvestigadores <|.. Documental
+    ConInvestigadores <|.. Podcast
     SerieDeTV "1" *-- "0..*" Temporada : composición
-    Documental "1" --> "0..*" Investigador : asociación (asesorado por)
-    VideoMusical "1" o-- "0..*" Actor : agregación (participantes)
-    Podcast "1" --> "0..*" Investigador : asociación (invitados)
+    Pelicula o-- Actor : agregación
+    Documental --> Investigador : asociación
+    Catalogo "1" o-- "0..*" ContenidoAudiovisual
+    Catalogo o-- Actor
+    Catalogo o-- Investigador
+    RepositorioCatalogo <|.. RepositorioCsv
+    RepositorioCsv --> MapeadorContenido : usa (OCP)
+    RepositorioCsv ..> ArchivoCsv
+    ArchivoCsv ..> Csv
+    ArchivoCsv ..> FilaCsv
+    PersistenciaException <|-- FormatoCsvException
+    Vista <|.. VistaConsola
+    CatalogoController --> Vista : DIP
+    CatalogoController --> RepositorioCatalogo : DIP
+    CatalogoController --> Catalogo
