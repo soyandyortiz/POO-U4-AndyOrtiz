@@ -1,13 +1,15 @@
-# Archivos compilados de Eclipse / Java
+# Compilados
 bin/
+bin-test/
 out/
 *.class
 
-# Configuración local del IDE
+# Archivos temporales que se crean al guardar los CSV
+*.tmp
+
+# IDE / sistema
 .metadata/
 .idea/
 *.iml
-
-# Sistema operativo
 .DS_Store
 Thumbs.db
