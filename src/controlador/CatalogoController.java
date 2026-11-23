@@ -17,11 +17,14 @@ import modelo.SerieDeTV;
 import modelo.Temporada;
 import modelo.VideoMusical;
 import modelo.excepciones.ElementoNoEncontradoException;
+import persistencia.PersistenciaException;
+import persistencia.RepositorioCatalogo;
 import vista.Vista;
 
 /**
  * Coordina la vista con el modelo: pide los datos al usuario, llama al catálogo
- * y muestra el resultado. Recibe la vista por el constructor (inyección de dependencias).
+ * y al repositorio y muestra el resultado. Recibe sus dependencias por el
+ * constructor (inyección de dependencias).
  */
 public class CatalogoController {
 
@@ -29,6 +32,7 @@ public class CatalogoController {
     private static final int ANIO_ACTUAL = 2026;
 
     private final Vista vista;
+    private final RepositorioCatalogo repositorio;
     private final Map<Integer, OpcionMenu> menu = new LinkedHashMap<>();
     private final Map<Integer, TipoContenido> tiposDeContenido = new LinkedHashMap<>();
     private Catalogo catalogo = new Catalogo();
@@ -39,8 +43,9 @@ public class CatalogoController {
     private record TipoContenido(String nombre, IntFunction<ContenidoAudiovisual> formulario) {
     }
 
-    public CatalogoController(Vista vista) {
+    public CatalogoController(Vista vista, RepositorioCatalogo repositorio) {
         this.vista = vista;
+        this.repositorio = repositorio;
         registrarOpcionesDelMenu();
         registrarTiposDeContenido();
     }
@@ -61,6 +66,8 @@ public class CatalogoController {
         menu.put(13, new OpcionMenu("Eliminar contenido", this::eliminarContenido));
         menu.put(14, new OpcionMenu("Ver actores e investigadores", this::verPersonas));
         menu.put(15, new OpcionMenu("Resumen del catálogo", this::mostrarResumen));
+        menu.put(16, new OpcionMenu("Guardar datos en archivos CSV", this::guardar));
+        menu.put(17, new OpcionMenu("Volver a cargar datos desde los CSV", this::cargar));
         menu.put(OPCION_SALIR, new OpcionMenu("Salir", this::salir));
     }
 
@@ -75,6 +82,7 @@ public class CatalogoController {
     // ============================================================== ciclo principal
 
     public void iniciar() {
+        cargarAlIniciar();
         int opcion;
         do {
             opcion = vista.elegirOpcion("SISTEMA DE CONTENIDO AUDIOVISUAL", descripcionesDelMenu());
@@ -100,7 +108,40 @@ public class CatalogoController {
         return catalogo;
     }
 
+    // ============================================================== persistencia
+
+    private void cargarAlIniciar() {
+        if (repositorio.existenDatos()) {
+            cargar();
+        } else {
+            vista.mostrarMensaje("No hay datos guardados todavía; se inicia con el catálogo vacío.");
+        }
+    }
+
+    private void cargar() {
+        try {
+            catalogo = repositorio.cargar();
+            vista.mostrarMensaje("Datos cargados: " + catalogo.getContenidos().size() + " contenidos, "
+                    + catalogo.getActores().size() + " actores y " + catalogo.getInvestigadores().size()
+                    + " investigadores.");
+        } catch (PersistenciaException e) {
+            vista.mostrarError("No se pudieron cargar los datos. " + e.getMessage());
+        }
+    }
+
+    private void guardar() {
+        try {
+            repositorio.guardar(catalogo);
+            vista.mostrarMensaje("Datos guardados en los archivos CSV.");
+        } catch (PersistenciaException e) {
+            vista.mostrarError("No se pudieron guardar los datos. " + e.getMessage());
+        }
+    }
+
     private void salir() {
+        if (vista.confirmar("¿Desea guardar los cambios antes de salir?")) {
+            guardar();
+        }
         vista.mostrarMensaje("Hasta pronto.");
     }
 

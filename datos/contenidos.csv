@@ -1,0 +1,7 @@
+id,tipo,titulo,duracion,genero,suma_estrellas,num_calificaciones,dato1,dato2,dato3,dato4
+1,PELICULA,Avatar,162,Ciencia ficción,9,2,20th Century Studios
+2,SERIE,Game of Thrones,60,Fantasía,5,1
+3,DOCUMENTAL,Cosmos,45,Ciencia,0,0,Astronomía
+4,VIDEO_MUSICAL,Vivir mi vida,5,Salsa,0,0,Marc Anthony,3.0,2013,1500000
+5,PODCAST,El universo en 30 minutos,30,Ciencia,4,1,Andy Ortiz,Spotify,1
+6,PELICULA,Interestelar,169,Ciencia ficción,5,1,"Warner Bros, Paramount"
