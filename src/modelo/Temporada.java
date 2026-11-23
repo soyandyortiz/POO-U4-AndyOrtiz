@@ -1,17 +1,15 @@
 package modelo;
 
 /**
- * Representa una temporada de una serie de TV.
- * Relación con SerieDeTV: COMPOSICIÓN. Una temporada no tiene sentido
- * sin su serie: solo SerieDeTV puede crearla (el constructor no es público)
- * y, al eliminar la serie, sus temporadas desaparecen con ella.
+ * Temporada de una serie. Composición: solo SerieDeTV puede crearla,
+ * por eso el constructor no es público.
  */
 public class Temporada {
-    private final int numero;
-    private int anioEstreno;
-    private int numeroEpisodios;
 
-    // Constructor de paquete: únicamente SerieDeTV crea temporadas
+    private final int numero;
+    private final int anioEstreno;
+    private final int numeroEpisodios;
+
     Temporada(int numero, int anioEstreno, int numeroEpisodios) {
         this.numero = numero;
         this.anioEstreno = anioEstreno;
@@ -26,16 +24,8 @@ public class Temporada {
         return anioEstreno;
     }
 
-    public void setAnioEstreno(int anioEstreno) {
-        this.anioEstreno = anioEstreno;
-    }
-
     public int getNumeroEpisodios() {
         return numeroEpisodios;
-    }
-
-    public void setNumeroEpisodios(int numeroEpisodios) {
-        this.numeroEpisodios = numeroEpisodios;
     }
 
     @Override

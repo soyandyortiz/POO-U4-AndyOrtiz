@@ -1,63 +1,44 @@
 package modelo;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-/**
- * NUEVA SUBCLASE (Etapa 4): video musical, hereda de ContenidoAudiovisual.
- * Reutiliza la clase Actor mediante AGREGACIÓN (0..*): los actores o
- * bailarines que aparecen en el video existen independientemente de él.
- */
-public class VideoMusical extends ContenidoAudiovisual {
+public class VideoMusical extends ContenidoAudiovisual implements ConReparto {
+
     public static final long UMBRAL_VIRAL = 1_000_000;
 
-    private String artista;
-    private String album;
-    private int anioLanzamiento;
+    private final String artista;
+    private final String album;
+    private final int anioLanzamiento;
     private long reproducciones;
-    private final List<Actor> participantes = new ArrayList<>();
+    private final ColeccionUnica<Actor> participantes = new ColeccionUnica<>();
 
-    public VideoMusical(String titulo, int duracionEnMinutos, String genero,
+    public VideoMusical(int id, String titulo, int duracionEnMinutos, String genero,
                         String artista, String album, int anioLanzamiento) {
-        super(titulo, duracionEnMinutos, genero);
-        this.artista = artista;
-        this.album = album;
-        this.anioLanzamiento = anioLanzamiento;
+        super(id, titulo, duracionEnMinutos, genero);
+        this.artista = Validacion.textoObligatorio(artista, "artista");
+        this.album = Validacion.textoObligatorio(album, "álbum");
+        this.anioLanzamiento = Validacion.enRango(anioLanzamiento, 1900, 2100, "año de lanzamiento");
     }
 
     public String getArtista() {
         return artista;
     }
 
-    public void setArtista(String artista) {
-        this.artista = artista;
-    }
-
     public String getAlbum() {
         return album;
-    }
-
-    public void setAlbum(String album) {
-        this.album = album;
     }
 
     public int getAnioLanzamiento() {
         return anioLanzamiento;
     }
 
-    public void setAnioLanzamiento(int anioLanzamiento) {
-        this.anioLanzamiento = anioLanzamiento;
-    }
-
     public long getReproducciones() {
         return reproducciones;
     }
 
-    /** Suma reproducciones al contador (no admite valores negativos). */
     public void registrarReproducciones(long cantidad) {
         if (cantidad < 0) {
-            throw new IllegalArgumentException("La cantidad no puede ser negativa");
+            throw new IllegalArgumentException("Las reproducciones no pueden ser negativas");
         }
         reproducciones += cantidad;
     }
@@ -66,19 +47,19 @@ public class VideoMusical extends ContenidoAudiovisual {
         return reproducciones >= UMBRAL_VIRAL;
     }
 
-    public boolean agregarParticipante(Actor actor) {
-        if (actor == null || participantes.contains(actor)) {
-            return false;
-        }
-        return participantes.add(actor);
+    @Override
+    public boolean agregarActor(Actor actor) {
+        return participantes.agregar(actor);
     }
 
-    public boolean quitarParticipante(Actor actor) {
-        return participantes.remove(actor);
+    @Override
+    public boolean quitarActor(Actor actor) {
+        return participantes.quitar(actor);
     }
 
-    public List<Actor> getParticipantes() {
-        return Collections.unmodifiableList(participantes);
+    @Override
+    public List<Actor> getActores() {
+        return participantes.comoLista();
     }
 
     @Override
@@ -88,15 +69,8 @@ public class VideoMusical extends ContenidoAudiovisual {
 
     @Override
     protected String detallesEspecificos() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Artista: ").append(artista).append(" | Álbum: ").append(album)
-          .append(" (").append(anioLanzamiento).append(")\n");
-        sb.append("Reproducciones: ").append(reproducciones)
-          .append(esViral() ? " [VIRAL]" : "").append("\n");
-        sb.append("Participantes (").append(participantes.size()).append("):\n");
-        for (Actor a : participantes) {
-            sb.append("  - ").append(a).append("\n");
-        }
-        return sb.toString();
+        return TextoDetalle.linea("Artista", artista + " | Álbum: " + album + " (" + anioLanzamiento + ")")
+                + TextoDetalle.linea("Reproducciones", reproducciones + (esViral() ? " [VIRAL]" : ""))
+                + TextoDetalle.lista("Participantes", getActores());
     }
 }

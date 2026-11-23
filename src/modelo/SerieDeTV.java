@@ -4,26 +4,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Subclase SerieDeTV que extiende de ContenidoAudiovisual.
- * Está compuesta (composición 0..*) por sus temporadas: la serie las crea
- * y controla su ciclo de vida.
- */
 public class SerieDeTV extends ContenidoAudiovisual {
+
+    public static final int ANIO_MINIMO = 1900;
+    public static final int ANIO_MAXIMO = 2100;
+
     private final List<Temporada> temporadas = new ArrayList<>();
 
-    public SerieDeTV(String titulo, int duracionEnMinutos, String genero) {
-        super(titulo, duracionEnMinutos, genero);
+    public SerieDeTV(int id, String titulo, int duracionEnMinutos, String genero) {
+        super(id, titulo, duracionEnMinutos, genero);
     }
 
-    /** Crea una nueva temporada dentro de la serie (numeración automática). */
+    /** La serie crea la temporada y le asigna el siguiente número (composición). */
     public Temporada agregarTemporada(int anioEstreno, int numeroEpisodios) {
-        Temporada t = new Temporada(temporadas.size() + 1, anioEstreno, numeroEpisodios);
-        temporadas.add(t);
-        return t;
+        Validacion.enRango(anioEstreno, ANIO_MINIMO, ANIO_MAXIMO, "año de estreno");
+        Validacion.positivo(numeroEpisodios, "número de episodios");
+        Temporada temporada = new Temporada(temporadas.size() + 1, anioEstreno, numeroEpisodios);
+        temporadas.add(temporada);
+        return temporada;
     }
 
-    /** Elimina la última temporada creada. */
     public boolean eliminarUltimaTemporada() {
         if (temporadas.isEmpty()) {
             return false;
@@ -41,11 +41,7 @@ public class SerieDeTV extends ContenidoAudiovisual {
     }
 
     public int getTotalEpisodios() {
-        int total = 0;
-        for (Temporada t : temporadas) {
-            total += t.getNumeroEpisodios();
-        }
-        return total;
+        return temporadas.stream().mapToInt(Temporada::getNumeroEpisodios).sum();
     }
 
     @Override
@@ -55,12 +51,7 @@ public class SerieDeTV extends ContenidoAudiovisual {
 
     @Override
     protected String detallesEspecificos() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Temporadas: ").append(getNumeroTemporadas())
-          .append(" | Episodios totales: ").append(getTotalEpisodios()).append("\n");
-        for (Temporada t : temporadas) {
-            sb.append("  - ").append(t).append("\n");
-        }
-        return sb.toString();
+        return TextoDetalle.linea("Episodios totales", getTotalEpisodios())
+                + TextoDetalle.lista("Temporadas", temporadas);
     }
 }

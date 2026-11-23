@@ -1,26 +1,27 @@
 package modelo;
 
 /**
- * Superclase abstracta de todo el contenido audiovisual del sistema.
- * Define los atributos comunes y el comportamiento polimórfico
- * {@link #mostrarDetalles()} que cada subclase especializa.
- *
- * @author Andy Ortiz
+ * Superclase de todo el contenido del catálogo. Guarda los datos comunes
+ * y define cómo se arman los detalles; cada subclase solo aporta su parte.
  */
 public abstract class ContenidoAudiovisual implements Calificable {
-    private static int contar = 0;
+
+    private final int id;
     private String titulo;
     private int duracionEnMinutos;
     private String genero;
-    private final int id;
     private int sumaEstrellas;
     private int numeroCalificaciones;
 
-    public ContenidoAudiovisual(String titulo, int duracionEnMinutos, String genero) {
-        this.id = contar++;
-        this.titulo = titulo;
-        this.duracionEnMinutos = duracionEnMinutos;
-        this.genero = genero;
+    protected ContenidoAudiovisual(int id, String titulo, int duracionEnMinutos, String genero) {
+        this.id = Validacion.positivo(id, "id");
+        this.titulo = Validacion.textoObligatorio(titulo, "título");
+        this.duracionEnMinutos = Validacion.positivo(duracionEnMinutos, "duración");
+        this.genero = Validacion.textoObligatorio(genero, "género");
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getTitulo() {
@@ -28,7 +29,7 @@ public abstract class ContenidoAudiovisual implements Calificable {
     }
 
     public void setTitulo(String titulo) {
-        this.titulo = titulo;
+        this.titulo = Validacion.textoObligatorio(titulo, "título");
     }
 
     public int getDuracionEnMinutos() {
@@ -36,7 +37,7 @@ public abstract class ContenidoAudiovisual implements Calificable {
     }
 
     public void setDuracionEnMinutos(int duracionEnMinutos) {
-        this.duracionEnMinutos = duracionEnMinutos;
+        this.duracionEnMinutos = Validacion.positivo(duracionEnMinutos, "duración");
     }
 
     public String getGenero() {
@@ -44,23 +45,26 @@ public abstract class ContenidoAudiovisual implements Calificable {
     }
 
     public void setGenero(String genero) {
-        this.genero = genero;
+        this.genero = Validacion.textoObligatorio(genero, "género");
     }
 
-    // 'id' no tiene setter: se asigna una sola vez en el constructor
-    public int getId() {
-        return id;
-    }
-
-    // ---- Implementación de la interfaz Calificable ----
     @Override
     public void calificar(int estrellas) {
-        if (estrellas < MIN_ESTRELLAS || estrellas > MAX_ESTRELLAS) {
-            throw new IllegalArgumentException(
-                    "La calificación debe estar entre " + MIN_ESTRELLAS + " y " + MAX_ESTRELLAS);
-        }
+        Validacion.enRango(estrellas, MIN_ESTRELLAS, MAX_ESTRELLAS, "estrellas");
         sumaEstrellas += estrellas;
         numeroCalificaciones++;
+    }
+
+    /** Recupera las calificaciones guardadas en un archivo. */
+    public void restaurarCalificaciones(int sumaEstrellas, int numeroCalificaciones) {
+        if (numeroCalificaciones < 0
+                || sumaEstrellas < numeroCalificaciones * MIN_ESTRELLAS
+                || sumaEstrellas > numeroCalificaciones * MAX_ESTRELLAS) {
+            throw new IllegalArgumentException("Calificaciones guardadas inválidas: suma " + sumaEstrellas
+                    + " para " + numeroCalificaciones + " votos");
+        }
+        this.sumaEstrellas = sumaEstrellas;
+        this.numeroCalificaciones = numeroCalificaciones;
     }
 
     @Override
@@ -73,33 +77,28 @@ public abstract class ContenidoAudiovisual implements Calificable {
         return numeroCalificaciones;
     }
 
-    /** Nombre del tipo de contenido (Película, Serie de TV, ...). */
+    public int getSumaEstrellas() {
+        return sumaEstrellas;
+    }
+
     public abstract String getTipo();
 
-    /** Detalles propios de cada subclase. */
     protected abstract String detallesEspecificos();
 
-    /** Detalles completos: datos comunes + datos de la subclase. */
     public String obtenerDetalles() {
         return "Detalles (" + getTipo() + "):\n"
-                + "ID: " + id + "\n"
-                + "Título: " + titulo + "\n"
-                + "Duración en minutos: " + duracionEnMinutos + "\n"
-                + "Género: " + genero + "\n"
-                + String.format("Calificación: %.1f/5 (%d votos)%n",
-                        getCalificacionPromedio(), numeroCalificaciones)
+                + TextoDetalle.linea("ID", id)
+                + TextoDetalle.linea("Título", titulo)
+                + TextoDetalle.linea("Duración en minutos", duracionEnMinutos)
+                + TextoDetalle.linea("Género", genero)
+                + TextoDetalle.linea("Calificación", String.format("%.1f/5 (%d votos)",
+                        getCalificacionPromedio(), numeroCalificaciones))
                 + detallesEspecificos();
     }
 
-    /** Resumen de una línea para listados. */
     @Override
     public String toString() {
         return String.format("[%d] %-13s | %s (%d min) | %.1f/5",
                 id, getTipo(), titulo, duracionEnMinutos, getCalificacionPromedio());
-    }
-
-    /** Método polimórfico heredado del código original. */
-    public void mostrarDetalles() {
-        System.out.println(obtenerDetalles());
     }
 }

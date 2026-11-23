@@ -1,48 +1,51 @@
 package modelo;
 
-/**
- * Representa a un actor o actriz.
- * Relación con Pelicula: AGREGACIÓN. El actor existe por sí mismo
- * (se registra aparte) y puede formar parte del reparto de varias películas;
- * si una película se elimina, el actor sigue existiendo.
- */
+/** Actor o actriz registrado en el catálogo. */
 public class Actor {
-    private String nombre;
-    private String nacionalidad;
-    private int anioDebut;
 
-    public Actor(String nombre, String nacionalidad, int anioDebut) {
-        this.nombre = nombre;
-        this.nacionalidad = nacionalidad;
-        this.anioDebut = anioDebut;
+    public static final int ANIO_MINIMO = 1880;
+    public static final int ANIO_MAXIMO = 2100;
+
+    private final int id;
+    private final String nombre;
+    private final String nacionalidad;
+    private final int anioDebut;
+
+    public Actor(int id, String nombre, String nacionalidad, int anioDebut) {
+        this.id = Validacion.positivo(id, "id");
+        this.nombre = Validacion.textoObligatorio(nombre, "nombre");
+        this.nacionalidad = Validacion.textoObligatorio(nacionalidad, "nacionalidad");
+        this.anioDebut = Validacion.enRango(anioDebut, ANIO_MINIMO, ANIO_MAXIMO, "año de debut");
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getNombre() {
         return nombre;
     }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
     public String getNacionalidad() {
         return nacionalidad;
-    }
-
-    public void setNacionalidad(String nacionalidad) {
-        this.nacionalidad = nacionalidad;
     }
 
     public int getAnioDebut() {
         return anioDebut;
     }
 
-    public void setAnioDebut(int anioDebut) {
-        this.anioDebut = anioDebut;
+    @Override
+    public boolean equals(Object otro) {
+        return otro instanceof Actor actor && actor.id == id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
     }
 
     @Override
     public String toString() {
-        return nombre + " (" + nacionalidad + ", debut " + anioDebut + ")";
+        return "[" + id + "] " + nombre + " (" + nacionalidad + ", debut " + anioDebut + ")";
     }
 }

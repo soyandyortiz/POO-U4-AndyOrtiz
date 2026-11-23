@@ -1,20 +1,15 @@
 package modelo;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-/**
- * Subclase Documental que extiende de ContenidoAudiovisual.
- * Se asocia (asociación 0..*) con los investigadores que lo asesoran.
- */
-public class Documental extends ContenidoAudiovisual {
-    private String tema;
-    private final List<Investigador> investigadores = new ArrayList<>();
+public class Documental extends ContenidoAudiovisual implements ConInvestigadores {
 
-    public Documental(String titulo, int duracionEnMinutos, String genero, String tema) {
-        super(titulo, duracionEnMinutos, genero);
-        this.tema = tema;
+    private String tema;
+    private final ColeccionUnica<Investigador> asesores = new ColeccionUnica<>();
+
+    public Documental(int id, String titulo, int duracionEnMinutos, String genero, String tema) {
+        super(id, titulo, duracionEnMinutos, genero);
+        this.tema = Validacion.textoObligatorio(tema, "tema");
     }
 
     public String getTema() {
@@ -22,22 +17,22 @@ public class Documental extends ContenidoAudiovisual {
     }
 
     public void setTema(String tema) {
-        this.tema = tema;
+        this.tema = Validacion.textoObligatorio(tema, "tema");
     }
 
+    @Override
     public boolean agregarInvestigador(Investigador investigador) {
-        if (investigador == null || investigadores.contains(investigador)) {
-            return false;
-        }
-        return investigadores.add(investigador);
+        return asesores.agregar(investigador);
     }
 
+    @Override
     public boolean quitarInvestigador(Investigador investigador) {
-        return investigadores.remove(investigador);
+        return asesores.quitar(investigador);
     }
 
+    @Override
     public List<Investigador> getInvestigadores() {
-        return Collections.unmodifiableList(investigadores);
+        return asesores.comoLista();
     }
 
     @Override
@@ -47,11 +42,6 @@ public class Documental extends ContenidoAudiovisual {
 
     @Override
     protected String detallesEspecificos() {
-        StringBuilder sb = new StringBuilder("Tema: " + tema + "\n");
-        sb.append("Investigadores asesores (").append(investigadores.size()).append("):\n");
-        for (Investigador i : investigadores) {
-            sb.append("  - ").append(i).append("\n");
-        }
-        return sb.toString();
+        return TextoDetalle.linea("Tema", tema) + TextoDetalle.lista("Investigadores asesores", getInvestigadores());
     }
 }

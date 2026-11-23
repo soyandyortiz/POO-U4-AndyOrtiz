@@ -1,20 +1,15 @@
 package modelo;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-/**
- * Subclase Pelicula que extiende de ContenidoAudiovisual.
- * Agrega (agregación 0..*) a los actores de su reparto.
- */
-public class Pelicula extends ContenidoAudiovisual {
-    private String estudio;
-    private final List<Actor> actores = new ArrayList<>();
+public class Pelicula extends ContenidoAudiovisual implements ConReparto {
 
-    public Pelicula(String titulo, int duracionEnMinutos, String genero, String estudio) {
-        super(titulo, duracionEnMinutos, genero);
-        this.estudio = estudio;
+    private String estudio;
+    private final ColeccionUnica<Actor> reparto = new ColeccionUnica<>();
+
+    public Pelicula(int id, String titulo, int duracionEnMinutos, String genero, String estudio) {
+        super(id, titulo, duracionEnMinutos, genero);
+        this.estudio = Validacion.textoObligatorio(estudio, "estudio");
     }
 
     public String getEstudio() {
@@ -22,23 +17,22 @@ public class Pelicula extends ContenidoAudiovisual {
     }
 
     public void setEstudio(String estudio) {
-        this.estudio = estudio;
+        this.estudio = Validacion.textoObligatorio(estudio, "estudio");
     }
 
-    /** Agrega un actor ya existente al reparto (sin duplicados). */
+    @Override
     public boolean agregarActor(Actor actor) {
-        if (actor == null || actores.contains(actor)) {
-            return false;
-        }
-        return actores.add(actor);
+        return reparto.agregar(actor);
     }
 
+    @Override
     public boolean quitarActor(Actor actor) {
-        return actores.remove(actor);
+        return reparto.quitar(actor);
     }
 
+    @Override
     public List<Actor> getActores() {
-        return Collections.unmodifiableList(actores);
+        return reparto.comoLista();
     }
 
     @Override
@@ -48,11 +42,6 @@ public class Pelicula extends ContenidoAudiovisual {
 
     @Override
     protected String detallesEspecificos() {
-        StringBuilder sb = new StringBuilder("Estudio: " + estudio + "\n");
-        sb.append("Reparto (").append(actores.size()).append("):\n");
-        for (Actor a : actores) {
-            sb.append("  - ").append(a).append("\n");
-        }
-        return sb.toString();
+        return TextoDetalle.linea("Estudio", estudio) + TextoDetalle.lista("Reparto", getActores());
     }
 }

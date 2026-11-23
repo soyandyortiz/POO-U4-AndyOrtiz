@@ -1,48 +1,48 @@
 package modelo;
 
-/**
- * Representa a un investigador o experto que asesora contenido.
- * Relación con Documental: ASOCIACIÓN. El documental conoce a los
- * investigadores que lo asesoran, pero no hay relación todo-parte:
- * ambos objetos son independientes.
- */
+/** Investigador o experto que asesora documentales o participa en podcasts. */
 public class Investigador {
-    private String nombre;
-    private String especialidad;
-    private String institucion;
 
-    public Investigador(String nombre, String especialidad, String institucion) {
-        this.nombre = nombre;
-        this.especialidad = especialidad;
-        this.institucion = institucion;
+    private final int id;
+    private final String nombre;
+    private final String especialidad;
+    private final String institucion;
+
+    public Investigador(int id, String nombre, String especialidad, String institucion) {
+        this.id = Validacion.positivo(id, "id");
+        this.nombre = Validacion.textoObligatorio(nombre, "nombre");
+        this.especialidad = Validacion.textoObligatorio(especialidad, "especialidad");
+        this.institucion = Validacion.textoObligatorio(institucion, "institución");
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getNombre() {
         return nombre;
     }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
     public String getEspecialidad() {
         return especialidad;
-    }
-
-    public void setEspecialidad(String especialidad) {
-        this.especialidad = especialidad;
     }
 
     public String getInstitucion() {
         return institucion;
     }
 
-    public void setInstitucion(String institucion) {
-        this.institucion = institucion;
+    @Override
+    public boolean equals(Object otro) {
+        return otro instanceof Investigador investigador && investigador.id == id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
     }
 
     @Override
     public String toString() {
-        return nombre + " - " + especialidad + " (" + institucion + ")";
+        return "[" + id + "] " + nombre + " - " + especialidad + " (" + institucion + ")";
     }
 }
